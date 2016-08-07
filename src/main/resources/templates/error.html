@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
+<div th:replace="layout :: head"></div>
+
+<body>
+
+    <div th:replace="layout :: flash"></div>
+    <div th:replace="layout :: header"></div>
+    <div th:replace="layout :: nav"></div>
+
+    <style>
+        .app-error {
+            margin-top: 20px;
+            border: 1px solid #dad7de;
+            padding: 10px;
+            background-color: #f7f5fa;
+            border-radius: 6px;
+        }
+    </style>
+
+    <div class="container">
+        <h2 th:text="|${#httpServletRequest.getAttribute('javax.servlet.error.status_code')} Error|">500 Error</h2>
+        <div th:if="${#httpServletRequest.getAttribute('javax.servlet.error.exception')} != null" class="app-error">
+            <code th:text="${#httpServletRequest.getAttribute('javax.servlet.error.exception')}">Error Message</code>
+        </div>
+    </div>
+
+</body>
+</html>
