@@ -19,13 +19,19 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.servlet.view.InternalResourceViewResolver;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.mockito.Matchers.isNull;
+import static org.mockito.Mockito.verify;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasProperty;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -98,6 +104,89 @@ public class CartControllerTest {
 				.andDo(print())
 				.andExpect(status().is3xxRedirection())
 				.andExpect(redirectedUrl("/product/"));
+	}
+
+	@Test
+	public void addTooManyToCartTest() throws Exception {
+		Product product = productBuilder();
+		product.setQuantity(15);
+
+		Purchase purchase = purchaseBuilder(product); // First purchase
+
+		when(productService.findById(1L)).thenReturn(product);
+		when(sCart.getPurchase()).thenReturn(purchase);
+
+		mockMvc.perform(MockMvcRequestBuilders.post("/cart/add").param("quantity", String.valueOf(product.getQuantity()+1)).param("productId", "1"))
+			.andDo(print())
+			.andExpect(status().is3xxRedirection())
+			.andExpect(redirectedUrl("/product/"))
+			.andExpect(MockMvcResultMatchers.flash().attributeCount(1))
+			.andExpect(MockMvcResultMatchers.flash().attributeExists("flash"))
+			.andExpect(MockMvcResultMatchers.flash().attribute("flash", hasProperty("status", equalTo(FlashMessage.Status.FAILURE))))
+			.andExpect(MockMvcResultMatchers.flash().attribute("flash", hasProperty("message", equalTo("You can't buy quantity of product more than in stock. We have only 15 items of TestName."))));
+
+
+		assert (purchase.getProductPurchases().get(0).getQuantity()==1); // Still only 1 purchase, was not edited because added quantity wasnt valid
+
+		for (int i=0;i<product.getQuantity()-1;i++) {    // Count getQuntity-1, cause first purchase was made already, see above
+			mockMvc.perform(MockMvcRequestBuilders.post("/cart/add").param("quantity", "1").param("productId", "1"))
+				.andDo(print())
+				.andExpect(status()
+				.is3xxRedirection())
+				.andExpect(redirectedUrl("/product/"))
+				.andExpect(MockMvcResultMatchers.flash().attribute("flash", hasProperty("status", equalTo(FlashMessage.Status.SUCCESS))))
+				.andExpect(MockMvcResultMatchers.flash().attribute("flash", hasProperty("message", equalTo("Added 1 of TestName to cart."))));
+		}
+
+		assert (purchase.getProductPurchases().get(0).getQuantity()==15); // Maximum count of purchases reached in loop
+
+		mockMvc.perform(MockMvcRequestBuilders.post("/cart/add").param("quantity", "1").param("productId", "1"))  // 6 purchase, more than in stock
+			.andDo(print())
+			.andExpect(status()
+			.is3xxRedirection())
+			.andExpect(redirectedUrl("/product/"))
+			.andExpect(MockMvcResultMatchers.flash().attribute("flash", hasProperty("status", equalTo(FlashMessage.Status.FAILURE))))
+			.andExpect(MockMvcResultMatchers.flash().attribute("flash", hasProperty("message", equalTo("You can't buy quantity of product more than in stock. We have only 15 items of TestName."))));
+
+	}
+
+	@Test
+	public void updateTooManyToCartTest() throws Exception {
+		Product product = productBuilder();
+		product.setQuantity(5);
+
+		Purchase purchase = purchaseBuilder(product); // First purchase
+
+		when(productService.findById(1L)).thenReturn(product);
+		when(sCart.getPurchase()).thenReturn(purchase);
+
+		mockMvc.perform(MockMvcRequestBuilders.post("/cart/update").param("newQuantity", "6").param("productId", "1"))
+			.andDo(print())
+			.andExpect(status().is3xxRedirection())
+			.andExpect(redirectedUrl("/cart"))
+			.andExpect(MockMvcResultMatchers.flash().attribute("flash", hasProperty("status", equalTo(FlashMessage.Status.FAILURE))))
+			.andExpect(MockMvcResultMatchers.flash().attribute("flash", hasProperty("message", equalTo("You can't buy quantity of product more than in stock. We have only 5 items of TestName."))));
+
+		assert (purchase.getProductPurchases().get(0).getQuantity()==1); // Still only 1 purchase, was not edited because 6 wasnt valid
+
+		mockMvc.perform(MockMvcRequestBuilders.post("/cart/update").param("newQuantity", "2").param("productId", "1"))
+			.andDo(print())
+			.andExpect(status().is3xxRedirection())
+			.andExpect(redirectedUrl("/cart"))
+			.andExpect(MockMvcResultMatchers.flash().attribute("flash", hasProperty("status", equalTo(FlashMessage.Status.SUCCESS))))
+			.andExpect(MockMvcResultMatchers.flash().attribute("flash", hasProperty("message", equalTo("Updated TestName to 2."))));
+
+		assert (purchase.getProductPurchases().get(0).getQuantity()==2); // Edited to 2
+
+		mockMvc.perform(MockMvcRequestBuilders.post("/cart/update").param("newQuantity", "0").param("productId", "1"))
+			.andDo(print())
+			.andExpect(status().is3xxRedirection())
+			.andExpect(redirectedUrl("/cart"))
+			.andExpect(MockMvcResultMatchers.flash().attribute("flash", hasProperty("status", equalTo(FlashMessage.Status.SUCCESS))))
+			.andExpect(MockMvcResultMatchers.flash().attribute("flash", hasProperty("message", equalTo("Removed TestName because quantity was set to 0."))));   // Cancel all purchases
+
+		assert (purchase.getProductPurchases().size()==0);
+
 	}
 
 	@Test

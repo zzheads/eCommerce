@@ -38,8 +38,8 @@ public class TestAddressIT {
     @Test
     public void findOne_ShouldReturnSecondAddressEntry() {
     	Address searchResults = repository.findOne(new Long(3));
- 
-        assertThat(searchResults.getStreetAddress().equalsIgnoreCase("Street Address 3"));
+
+      assertThat(searchResults.getStreetAddress().equalsIgnoreCase("Street Address 3"));
     }
     
     @Test

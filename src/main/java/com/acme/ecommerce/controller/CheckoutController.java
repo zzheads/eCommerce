@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
+import org.thymeleaf.expression.Strings;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
@@ -236,11 +237,12 @@ public class CheckoutController {
 	
 	@RequestMapping("/confirmation")
 	String checkoutConfirmation(Model model) {
-    	Purchase purchase = sCart.getPurchase();
-    	BigDecimal subTotal = new BigDecimal(0);
-       	BigDecimal shippingCost = new BigDecimal(0);
-    	CouponCode couponCode = sCart.getCouponCode();
-    	
+
+		Purchase purchase = sCart.getPurchase();
+		BigDecimal subTotal = new BigDecimal(0);
+		BigDecimal shippingCost = new BigDecimal(0);
+		CouponCode couponCode = sCart.getCouponCode();
+
     	model.addAttribute("purchase", purchase);
     	if (purchase != null) {
     		subTotal = computeSubtotal(purchase, couponCode);
@@ -255,6 +257,7 @@ public class CheckoutController {
     		model.addAttribute("shippingAddress", purchase.getShippingAddress());
     		model.addAttribute("billingAddress", purchase.getBillingAddress());
     		model.addAttribute("creditCard", purchase.getCreditCardNumber());
+
     	} else {
     		logger.error("No purchases Found!");
     		return("redirect:/error");

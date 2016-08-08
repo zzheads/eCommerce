@@ -2,6 +2,7 @@ package com.acme.ecommerce.controller;
 
 import com.acme.ecommerce.Application;
 import com.acme.ecommerce.config.PersistenceConfig;
+import com.acme.ecommerce.domain.FormatLocale;
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.html.HtmlAnchor;
 import com.gargoylesoftware.htmlunit.html.HtmlForm;
@@ -21,6 +22,7 @@ import org.springframework.web.context.WebApplicationContext;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 
+import static com.acme.ecommerce.domain.FormatLocale.format;
 import static org.fest.assertions.Assertions.assertThat;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -35,7 +37,6 @@ public class TestProductControllerIT {
 	private static final String PRODUCT_NAME = "Corkscrew";
 	private static final String PRODUCT_DESC = "A screw for corks";
 	private static final BigDecimal PRODUCT_PRICE = BigDecimal.valueOf(189.79);
-	private static final String PRODUCT_PRICE_STRING = "$189.79";
 	private static final Integer ORDER_QUANTITY = 3;
 	
 	WebClient webClient;
@@ -62,7 +63,7 @@ public class TestProductControllerIT {
 		String productName = productPage.getHtmlElementById("productName").getTextContent();
 		String productPrice = productPage.getHtmlElementById("productPrice").getTextContent();
 		String productDesc = productPage.getHtmlElementById("productDescription").getTextContent();
-		String productPriceExpected = "$" + new DecimalFormat("#0.##").format(PRODUCT_PRICE);
+		String productPriceExpected = "$" + format(PRODUCT_PRICE);
 
 		assertThat(productName).isEqualTo(PRODUCT_NAME);
 		assertThat(productPrice).isEqualTo(productPriceExpected);
@@ -87,7 +88,7 @@ public class TestProductControllerIT {
 		
 		assertThat(productCartName).isEqualTo(PRODUCT_NAME);
 		assertThat(productCartPrice).isEqualTo(productPriceExpected);
-		assertThat(productCartSubtotal).isEqualTo("$" + new DecimalFormat("#0.##").format(PRODUCT_PRICE.multiply(BigDecimal.valueOf(ORDER_QUANTITY))));
-		
+
+		assertThat(productCartSubtotal).isEqualTo("$" + format(PRODUCT_PRICE.multiply(BigDecimal.valueOf(ORDER_QUANTITY))));
 	}
 }

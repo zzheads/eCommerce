@@ -9,7 +9,7 @@
 	            <div class="item">
 	                <a th:href="@{/detail/{productId}(productId=${productPurchase.product.id})}"><img class="img-thumb" th:src="@{/product/{productId}/image(productId=${productPurchase.product.id})}"/></a>
 	                <h2><a th:href="@{/detail/{productId}(productId=${productPurchase.product.id})}" th:text="${productPurchase.product.name}">Product Title</a></h2>
-	                <span class="price" th:text="${'$' + #numbers.formatDecimal(productPurchase.product.price, 1, 2, 'COMMA')}">$199.00</span>
+	                <span class="price" th:text="${'$' + #numbers.formatDecimal(productPurchase.product.price, 1, 2, 'POINT')}">$199.00</span>
 	                <span th:inline="text" class="item-quantity">Quantity: [[${productPurchase.quantity}]]</span>
 	            </div>
             </div>

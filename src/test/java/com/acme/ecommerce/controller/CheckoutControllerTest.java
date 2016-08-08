@@ -15,6 +15,7 @@ import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -140,7 +141,7 @@ public class CheckoutControllerTest {
 		when(sCart.getPurchase()).thenReturn(purchase);
 
 		CouponCode coupon = new CouponCode();
-		coupon.setCode("abcd");
+		coupon.setCode("abcde");
 		when(sCart.getCouponCode()).thenReturn(coupon);
 
 		mockMvc.perform(MockMvcRequestBuilders.get("/checkout/shipping")).andDo(print())
@@ -167,7 +168,7 @@ public class CheckoutControllerTest {
 		when(sCart.getPurchase()).thenReturn(purchase);
 
 		CouponCode coupon = new CouponCode();
-		coupon.setCode("abcd");
+		coupon.setCode("abcde");
 		when(sCart.getCouponCode()).thenReturn(coupon);
 
 		when(purchaseService.save(purchase)).thenReturn(purchase);
@@ -190,7 +191,7 @@ public class CheckoutControllerTest {
 		when(sCart.getPurchase()).thenReturn(purchase);
 
 		CouponCode coupon = new CouponCode();
-		coupon.setCode("abcd");
+		coupon.setCode("abcde");
 		when(sCart.getCouponCode()).thenReturn(coupon);
 
 		when(purchaseService.save(purchase)).thenReturn(purchase);
@@ -222,7 +223,7 @@ public class CheckoutControllerTest {
 		when(sCart.getPurchase()).thenReturn(purchase);
 
 		CouponCode coupon = new CouponCode();
-		coupon.setCode("abcd");
+		coupon.setCode("abcde");
 		when(sCart.getCouponCode()).thenReturn(coupon);
 
 		when(purchaseService.save(purchase)).thenReturn(purchase);
@@ -250,7 +251,7 @@ public class CheckoutControllerTest {
 		when(sCart.getPurchase()).thenReturn(purchase);
 
 		CouponCode coupon = new CouponCode();
-		coupon.setCode("abcd");
+		coupon.setCode("abcde");
 		when(sCart.getCouponCode()).thenReturn(coupon);
 
 		when(purchaseService.save(purchase)).thenReturn(purchase);
@@ -304,17 +305,14 @@ public class CheckoutControllerTest {
 	@Test
 	public void confirmationTest() throws Exception {
 		Product product = productBuilder();
-
 		when(productService.findById(1L)).thenReturn(product);
 
 		Purchase purchase = purchaseBuilder(product);
-		when(sCart.getPurchase()).thenReturn(purchase);
-
-		CouponCode coupon = new CouponCode();
-		coupon.setCode("abcd");
-		when(sCart.getCouponCode()).thenReturn(coupon);
-
 		when(purchaseService.save(purchase)).thenReturn(purchase);
+		CouponCode coupon = new CouponCode("abcdef");
+
+		when(sCart.getPurchase()).thenReturn(purchase);
+		when(sCart.getCouponCode()).thenReturn(coupon);
 
 		mockMvc.perform(MockMvcRequestBuilders.get("/checkout/confirmation")).andDo(print())
 			.andExpect(status().isOk())

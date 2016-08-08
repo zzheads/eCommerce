@@ -2,11 +2,13 @@ package com.acme.ecommerce.controller;
 
 import com.acme.ecommerce.domain.Product;
 import com.acme.ecommerce.domain.ProductPurchase;
+import com.acme.ecommerce.domain.ShoppingCart;
 import com.acme.ecommerce.service.ProductService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Scope;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -15,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.activation.MimetypesFileTypeMap;
 import javax.servlet.http.HttpSession;
@@ -22,8 +25,12 @@ import java.io.*;
 
 @Controller
 @RequestMapping("/product")
+@Scope("request")
 public class ProductController {
-	
+
+	@Autowired
+	private ShoppingCart sCart;
+
 	final Logger logger = LoggerFactory.getLogger(ProductController.class);
 	
 	private static final int INITIAL_PAGE = 0;
@@ -31,7 +38,7 @@ public class ProductController {
 	
 	@Autowired
 	ProductService productService;
-	
+
 	@Autowired
 	HttpSession session;
 	// /Projects/techdegree-javaweb-ecommerce-master/src/main/resources/static/images/
@@ -43,20 +50,21 @@ public class ProductController {
     	logger.debug("Getting Product List");
     	logger.debug("Session ID = " + session.getId());
     	
-		// Evaluate page. If requested parameter is null or less than 0 (to
-		// prevent exception), return initial size. Otherwise, return value of
-		// param. decreased by 1.
-		int evalPage = (page == null || page < 1) ? INITIAL_PAGE : page - 1;
-    	
-    	Page<Product> products = productService.findAll(new PageRequest(evalPage, PAGE_SIZE));
-    	
-		model.addAttribute("products", products);
+			// Evaluate page. If requested parameter is null or less than 0 (to
+			// prevent exception), return initial size. Otherwise, return value of
+			// param. decreased by 1.
+			int evalPage = (page == null || page < 1) ? INITIAL_PAGE : page - 1;
 
-        return "index";
+			Page<Product> products = productService.findAll(new PageRequest(evalPage, PAGE_SIZE));
+    	
+			model.addAttribute("products", products);
+			model.addAttribute("subTotal", CartController.subTotal(sCart));
+
+			return "index";
     }
     
     @RequestMapping(path = "/detail/{id}", method = RequestMethod.GET)
-    public String productDetail(@PathVariable long id, Model model) {
+    public String productDetail(@PathVariable long id, Model model, RedirectAttributes redirectAttributes) {
     	logger.debug("Details for Product " + id);
     	
     	Product returnProduct = productService.findById(id);
@@ -68,6 +76,7 @@ public class ProductController {
     		model.addAttribute("productPurchase", productPurchase);
     	} else {
     		logger.error("Product " + id + " Not Found!");
+				redirectAttributes.addFlashAttribute("flash", new FlashMessage (String.format("Product with id=%d was not found..", id), FlashMessage.Status.FAILURE));
     		return "redirect:/error";
     	}
 
