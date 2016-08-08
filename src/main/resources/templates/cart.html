@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.springframework.org/schema/data/jaxb">
+<html xmlns:th="http://www.thymeleaf.org">
 <div th:replace="layout :: head"></div>
 <body>
 <div th:replace="layout :: header"></div>
@@ -23,7 +23,7 @@
 	                </form>
 	            </div>
 	            <div class="subtotal">
-	                Subtotal: <strong><span id="subtotal" th:text="${'$' + #numbers.formatDecimal(subTotal, 1, 2, 'POINT')}">$199.00</span></strong>
+	                Subtotal: <strong><span id="subtotal" th:text="${'$' + #numbers.formatDecimal(subTotalCart, 1, 2, 'POINT')}">$199.00</span></strong>
 	            </div>
 	            <div class="checkout-footer">
 	                <form id="emtpyCartForm" action="#" th:action="@{/cart/empty}" method="post">
@@ -36,8 +36,5 @@
 	        	<strong> You have not made any selections</strong>
 	        </div>
         </section>
-
-		<div th:replace="layout :: flash"></div>
-
     </body>
 </html>

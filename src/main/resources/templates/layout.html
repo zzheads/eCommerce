@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.springframework.org/schema/data/jaxb">
+<html xmlns:th="http://www.thymeleaf.org">
 <div th:fragment="head" class="head-fixed">
     <head th:fragment="head(page_title)" lang="en">
         <meta charset="utf-8"/>
@@ -18,26 +18,19 @@
 
 <div th:fragment="header" class="header-fixed">
     <header>
-        <a class="logo" href="/product/">CartShop</a>
-        <nav>
-            <ul>
-                <li><a href="#">About</a></li>
-                <li><a href="#">FAQ</a></li>
-                <li><a name="cartButton" class="button icon-right" href="/cart">View Cart <i class="material-icons">shopping_cart</i></a></li>
-                <li><a th:if="${subTotal} > 0" th:text="${'SubTotal: $' + #numbers.formatDecimal(subTotal, 1, 'COMMA', 2, 'POINT')}"></a></li>
-            </ul>
-        </nav>
+            <a class="logo" href="/product/">CartShop</a>
+            <nav>
+                <ul>
+                    <li><a href="#">About</a></li>
+                    <li><a href="#">FAQ</a></li>
+                    <li><a name="cartButton" class="button icon-right" href="/cart">View Cart <i class="material-icons">shopping_cart</i></a></li>
+                    <li><a th:if="${(subTotal > 0) and (subTotal != null)}" th:text="${'SubTotal: $' + #numbers.formatDecimal(subTotal, 1, 'COMMA', 2, 'POINT')}"></a></li>
+                </ul>
+            </nav>
     </header>
-</div>
-
-
-<div th:fragment="flash">
-
-    <div th:if="${flash != null}" class="container">
+    <div th:fragment="flash" th:if="${flash != null}" class="container">
         <div th:classappend="${#strings.toLowerCase(flash.status)}" th:text="${flash.message}" class="flash"></div>
     </div>
-
 </div>
-
 </body>
 </html>

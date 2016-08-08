@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
+<html xmlns:th="http://www.thymeleaf.org">
 <div th:replace="layout :: head"></div>
 
 <body>
@@ -22,8 +22,6 @@
             <code th:text="${#httpServletRequest.getAttribute('javax.servlet.error.exception')}">Error Message</code>
         </div>
     </div>
-
-    <div th:replace="layout :: flash"></div>
 
 </body>
 </html>

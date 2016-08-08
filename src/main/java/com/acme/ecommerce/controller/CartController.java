@@ -49,7 +49,7 @@ public class CartController {
 
     	model.addAttribute("purchase", purchase);
     	if (purchase != null) {
-    		model.addAttribute("subTotal", subTotal(sCart));
+    		model.addAttribute("subTotalCart", subTotal(sCart));
     	} else {
     		logger.error("No purchases Found for session ID=" + session.getId());
     		return "redirect:/error";
