@@ -4,8 +4,7 @@ import com.acme.ecommerce.domain.Product;
 import com.acme.ecommerce.domain.ProductPurchase;
 import com.acme.ecommerce.domain.Purchase;
 import com.acme.ecommerce.domain.ShoppingCart;
-import com.acme.ecommerce.service.ProductService;
-import com.acme.ecommerce.service.PurchaseService;
+import com.acme.ecommerce.service.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +32,9 @@ public class CartController {
 	
 	@Autowired
 	private ProductService productService;
+
+	@Autowired
+	private ShoppingCartService shoppingCartService;
 	
 	@Autowired
 	private ShoppingCart sCart;
@@ -72,103 +74,41 @@ public class CartController {
     @RequestMapping(path="/add", method = RequestMethod.POST)
     public RedirectView addToCart(@ModelAttribute(value="productId") long productId, @ModelAttribute(value="quantity") int quantity, RedirectAttributes redirectAttributes) {
 
-    	boolean productAlreadyInCart = false;
     	RedirectView redirect = new RedirectView("/product/");
 			redirect.setExposeModelAttributes(false);
 
-    	Product addProduct = productService.findById(productId);
-
-			if (addProduct != null) {
-	    	logger.debug("Adding Product: " + addProduct.getId());
-
-    		Purchase purchase = sCart.getPurchase();
-    		if (purchase == null) {
-    			purchase = new Purchase();
-    			sCart.setPurchase(purchase);
-    		} else {
-    			for (ProductPurchase pp : purchase.getProductPurchases()) {
-    				if (pp.getProduct() != null) {
-    					if (pp.getProduct().getId().equals(productId)) {
-								if ((pp.getQuantity()+quantity) > addProduct.getQuantity()) {  // We want buy more than have
-									redirectAttributes.addFlashAttribute("flash", FlashMessage.outOfStock(addProduct));
-									return redirect;
-								}
-    						pp.setQuantity(pp.getQuantity() + quantity);
-								redirectAttributes.addFlashAttribute("flash", new FlashMessage (String.format("Added %d of %s to cart.", quantity, addProduct.getName()), FlashMessage.Status.SUCCESS));
-    						productAlreadyInCart = true;
-    						break;
-    					}
-    				}
-    			}
-    		}
-    		if (!productAlreadyInCart) {
-
-					if (quantity>addProduct.getQuantity()) {   // We want buy more than have in stock that product
-						redirectAttributes.addFlashAttribute("flash", FlashMessage.outOfStock(addProduct));
-						return redirect;
-					}
-
-    			ProductPurchase newProductPurchase = new ProductPurchase();
-    			newProductPurchase.setProduct(addProduct);
-    			newProductPurchase.setQuantity(quantity);
-    			newProductPurchase.setPurchase(purchase);
-        	purchase.getProductPurchases().add(newProductPurchase);
-    		}
-    		logger.debug("Added " + quantity + " of " + addProduct.getName() + " to cart");
-				redirectAttributes.addFlashAttribute("flash", new FlashMessage (String.format("Added %d of %s to cart.", quantity, addProduct.getName()), FlashMessage.Status.SUCCESS));
-    		sCart.setPurchase(purchaseService.save(purchase));
-			} else {
-				logger.error("Attempt to add unknown product: " + productId);
+			try {
+				 redirectAttributes.addFlashAttribute("flash", shoppingCartService.addQuantity(sCart, productId, quantity));
+			} catch (ProductNotFoundException e) {
+				e.printStackTrace();
+				redirectAttributes.addFlashAttribute("flash", new FlashMessage(e.getMessage(),	FlashMessage.Status.FAILURE));
 				redirect.setUrl("/error");
+			} catch (ExceedsProductQuantityException e) {
+				e.printStackTrace();
+				redirectAttributes.addFlashAttribute("flash", new FlashMessage(e.getMessage(),	FlashMessage.Status.FAILURE));
 			}
 
     	return redirect;
     }
 
 	@RequestMapping(path="/update", method = RequestMethod.POST)
-    public RedirectView updateCart(@ModelAttribute(value="productId") long productId, @ModelAttribute(value="newQuantity") int newQuantity, RedirectAttributes redirectAttributes) {
-    	logger.debug("Updating Product: " + productId + " with Quantity: " + newQuantity);
-			RedirectView redirect = new RedirectView("/cart");
-			redirect.setExposeModelAttributes(false);
-    	
-    	Product updateProduct = productService.findById(productId);
-    	if (updateProduct != null) {
+	public RedirectView updateCart(@ModelAttribute(value="productId") long productId, @ModelAttribute(value="newQuantity") int newQuantity, RedirectAttributes redirectAttributes) {
+		logger.debug("Updating Product: " + productId + " with Quantity: " + newQuantity);
+		RedirectView redirect = new RedirectView("/cart");
+		redirect.setExposeModelAttributes(false);
 
-    		Purchase purchase = sCart.getPurchase();
-    		if (purchase == null) {
-    			logger.error("Unable to find shopping cart for update");
-    			redirect.setUrl("/error");
-    		} else {
-    			for (ProductPurchase pp : purchase.getProductPurchases()) {
-    				if (pp.getProduct() != null) {
-    					if (pp.getProduct().getId().equals(productId)) {
+		try {
+			redirectAttributes.addFlashAttribute("flash", shoppingCartService.updateQuantity(sCart, productId, newQuantity));
+		} catch (ProductNotFoundException | ShoppingCartNotFoundException e) {
+			e.printStackTrace();
+			redirectAttributes.addFlashAttribute("flash", new FlashMessage(e.getMessage(),	FlashMessage.Status.FAILURE));
+			redirect.setUrl("/error");
+		} catch (ExceedsProductQuantityException e) {
+			e.printStackTrace();
+			redirectAttributes.addFlashAttribute("flash", new FlashMessage(e.getMessage(),	FlashMessage.Status.FAILURE));
+		}
 
-								if (newQuantity>updateProduct.getQuantity()) {
-									redirectAttributes.addFlashAttribute("flash", FlashMessage.outOfStock(updateProduct));
-									return redirect;
-								}
-
-    						if (newQuantity > 0) {
-    							pp.setQuantity(newQuantity);
-    							logger.debug("Updated " + updateProduct.getName() + " to " + newQuantity);
-									redirectAttributes.addFlashAttribute("flash", new FlashMessage (String.format("Updated %s to %d.", updateProduct.getName(), newQuantity), FlashMessage.Status.SUCCESS));
-    						} else {
-    							purchase.getProductPurchases().remove(pp);
-    							logger.debug("Removed " + updateProduct.getName() + " because quantity was set to " + newQuantity);
-									redirectAttributes.addFlashAttribute("flash", new FlashMessage (String.format("Removed %s because quantity was set to %d.", updateProduct.getName(), newQuantity), FlashMessage.Status.SUCCESS));
-    						}
-    						break;
-    					}
-    				}
-    			}
-    		}
-    		sCart.setPurchase(purchaseService.save(purchase));
-    	} else {
-    		logger.error("Attempt to update on non-existent product");
-    		redirect.setUrl("/error");
-    	}
-    	
-    	return redirect;
+		return redirect;
     }
     
     @RequestMapping(path="/remove", method = RequestMethod.POST)
