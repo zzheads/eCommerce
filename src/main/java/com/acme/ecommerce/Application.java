@@ -37,7 +37,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 // DONE: Combine the common elements of Thymeleaf templates into a single template as fragments, and include those fragments in the individual templates, so as to eliminate the duplication of markup.
 // DONE: Throw exceptions in the service layer for the case when an product’s requested quantity exceeds the quantity in stock, instead of checking the quantity in the controller.
 // DONE: Throw an exception in the service layer for the case when a certain product entity is requested - ProductService.findById(Long) - but is not found. Explicitly catch this exception in the controller layer, or use an @ExceptionHandler as stated in the next extra credit opportunity.
-// TODO: Research @ExceptionHandler controller methods in Spring, and add one for when a product’s detail view is requested for an unknown product id. This should produce a 404 response code and render a view that displays a friendly page saying that the product wasn’t found.
+// DONE: Research @ExceptionHandler controller methods in Spring, and add one for when a product’s detail view is requested for an unknown product id. This should produce a 404 response code and render a view that displays a friendly page saying that the product wasn’t found.
 
 
 

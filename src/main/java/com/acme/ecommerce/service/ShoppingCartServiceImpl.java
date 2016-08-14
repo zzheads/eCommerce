@@ -5,6 +5,9 @@ import com.acme.ecommerce.domain.Product;
 import com.acme.ecommerce.domain.ProductPurchase;
 import com.acme.ecommerce.domain.Purchase;
 import com.acme.ecommerce.domain.ShoppingCart;
+import com.acme.ecommerce.exceptions.ExceedsProductQuantityException;
+import com.acme.ecommerce.exceptions.ProductNotFoundException;
+import com.acme.ecommerce.exceptions.ShoppingCartNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -21,7 +24,8 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
     private PurchaseService purchaseService;
 
     @Override
-    public FlashMessage addQuantity(ShoppingCart cart, Long productId, int changeQuantity) throws ProductNotFoundException, ExceedsProductQuantityException {
+    public FlashMessage addQuantity(ShoppingCart cart, Long productId, int changeQuantity) throws
+        ProductNotFoundException, ExceedsProductQuantityException {
         // Changes quantity of product (productId) in shopping cart on changeQuantity, returns FlashMessage
         FlashMessage flashMessage;
         Product product = productService.findById(productId);
@@ -68,7 +72,8 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
     }
 
     @Override
-    public FlashMessage updateQuantity(ShoppingCart cart, Long productId, int newQuantity) throws ProductNotFoundException, ExceedsProductQuantityException, ShoppingCartNotFoundException {
+    public FlashMessage updateQuantity(ShoppingCart cart, Long productId, int newQuantity) throws ProductNotFoundException, ExceedsProductQuantityException,
+        ShoppingCartNotFoundException {
 
         FlashMessage flashMessage = new FlashMessage("", FlashMessage.Status.SUCCESS);
         Product updateProduct = productService.findById(productId);

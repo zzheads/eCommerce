@@ -3,6 +3,7 @@ package com.acme.ecommerce.controller;
 import com.acme.ecommerce.domain.Product;
 import com.acme.ecommerce.domain.ProductPurchase;
 import com.acme.ecommerce.domain.ShoppingCart;
+import com.acme.ecommerce.exceptions.ProductNotFoundException;
 import com.acme.ecommerce.service.ProductService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.activation.MimetypesFileTypeMap;
@@ -64,9 +66,9 @@ public class ProductController {
     }
     
     @RequestMapping(path = "/detail/{id}", method = RequestMethod.GET)
-    public String productDetail(@PathVariable long id, Model model, RedirectAttributes redirectAttributes) {
+    public String productDetail(@PathVariable long id, Model model, RedirectAttributes redirectAttributes) throws ProductNotFoundException {
     	logger.debug("Details for Product " + id);
-    	
+
     	Product returnProduct = productService.findById(id);
     	if (returnProduct != null) {
     		model.addAttribute("product", returnProduct);
@@ -76,8 +78,9 @@ public class ProductController {
     		model.addAttribute("productPurchase", productPurchase);
     	} else {
     		logger.error("Product " + id + " Not Found!");
-				redirectAttributes.addFlashAttribute("flash", new FlashMessage (String.format("Product with id=%d was not found..", id), FlashMessage.Status.FAILURE));
-    		return "redirect:/error";
+				//redirectAttributes.addFlashAttribute("flash", new FlashMessage (String.format("Product with id=%d was not found..", id), FlashMessage.Status.FAILURE));
+				throw new ProductNotFoundException(String.format("Product with id=%d was not found.", id));
+    		//return "redirect:/error";
     	}
 
         return "product_detail";
@@ -113,9 +116,19 @@ public class ProductController {
                 .body(resource);
     }
     
-    @RequestMapping(path = "/about")
-    public String aboutCartShop() {
-    	logger.warn("Happy Easter! Someone actually clicked on About.");
-    	return("about");
-    }
+  @RequestMapping(path = "/about")
+  public String aboutCartShop() {
+  	logger.warn("Happy Easter! Someone actually clicked on About.");
+    return("about");
+	}
+
+	@ExceptionHandler(ProductNotFoundException.class)
+	public ModelAndView handleProductNotFoundException(ProductNotFoundException ex) {
+
+		ModelAndView model = new ModelAndView("error");
+		model.addObject("exception", ex);
+
+		return model;
+	}
+
 }

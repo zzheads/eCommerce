@@ -4,6 +4,9 @@ import com.acme.ecommerce.domain.Product;
 import com.acme.ecommerce.domain.ProductPurchase;
 import com.acme.ecommerce.domain.Purchase;
 import com.acme.ecommerce.domain.ShoppingCart;
+import com.acme.ecommerce.exceptions.ExceedsProductQuantityException;
+import com.acme.ecommerce.exceptions.ProductNotFoundException;
+import com.acme.ecommerce.exceptions.ShoppingCartNotFoundException;
 import com.acme.ecommerce.service.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,9 +14,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.servlet.view.RedirectView;
 
@@ -72,17 +77,13 @@ public class CartController {
 
 
     @RequestMapping(path="/add", method = RequestMethod.POST)
-    public RedirectView addToCart(@ModelAttribute(value="productId") long productId, @ModelAttribute(value="quantity") int quantity, RedirectAttributes redirectAttributes) {
+    public RedirectView addToCart(@ModelAttribute(value="productId") long productId, @ModelAttribute(value="quantity") int quantity, RedirectAttributes redirectAttributes)	throws ProductNotFoundException {
 
     	RedirectView redirect = new RedirectView("/product/");
 			redirect.setExposeModelAttributes(false);
 
 			try {
 				 redirectAttributes.addFlashAttribute("flash", shoppingCartService.addQuantity(sCart, productId, quantity));
-			} catch (ProductNotFoundException e) {
-				e.printStackTrace();
-				redirectAttributes.addFlashAttribute("flash", new FlashMessage(e.getMessage(),	FlashMessage.Status.FAILURE));
-				redirect.setUrl("/error");
 			} catch (ExceedsProductQuantityException e) {
 				e.printStackTrace();
 				redirectAttributes.addFlashAttribute("flash", new FlashMessage(e.getMessage(),	FlashMessage.Status.FAILURE));
@@ -92,14 +93,14 @@ public class CartController {
     }
 
 	@RequestMapping(path="/update", method = RequestMethod.POST)
-	public RedirectView updateCart(@ModelAttribute(value="productId") long productId, @ModelAttribute(value="newQuantity") int newQuantity, RedirectAttributes redirectAttributes) {
+	public RedirectView updateCart(@ModelAttribute(value="productId") long productId, @ModelAttribute(value="newQuantity") int newQuantity, RedirectAttributes redirectAttributes) throws ProductNotFoundException {
 		logger.debug("Updating Product: " + productId + " with Quantity: " + newQuantity);
 		RedirectView redirect = new RedirectView("/cart");
 		redirect.setExposeModelAttributes(false);
 
 		try {
 			redirectAttributes.addFlashAttribute("flash", shoppingCartService.updateQuantity(sCart, productId, newQuantity));
-		} catch (ProductNotFoundException | ShoppingCartNotFoundException e) {
+		} catch (ShoppingCartNotFoundException e) {
 			e.printStackTrace();
 			redirectAttributes.addFlashAttribute("flash", new FlashMessage(e.getMessage(),	FlashMessage.Status.FAILURE));
 			redirect.setUrl("/error");
@@ -112,7 +113,7 @@ public class CartController {
     }
     
     @RequestMapping(path="/remove", method = RequestMethod.POST)
-    public RedirectView removeFromCart(@ModelAttribute(value="productId") long productId, RedirectAttributes redirectAttributes) {
+    public RedirectView removeFromCart(@ModelAttribute(value="productId") long productId, RedirectAttributes redirectAttributes) throws ProductNotFoundException {
     	logger.debug("Removing Product: " + productId);
 		RedirectView redirect = new RedirectView("/cart");
 		redirect.setExposeModelAttributes(false);
@@ -142,8 +143,7 @@ public class CartController {
     			redirect.setUrl("/error");
     		}
     	} else {
-    		logger.error("Attempt to update on non-existent product");
-    		redirect.setUrl("/error");
+    		throw new ProductNotFoundException("Attempt to update on non-existent product");
     	}
 
     	return redirect;
@@ -167,6 +167,15 @@ public class CartController {
 		
     	return redirect;
     }
+
+	@ExceptionHandler(ProductNotFoundException.class)
+	public ModelAndView handleProductNotFoundException(ProductNotFoundException ex) {
+
+		ModelAndView model = new ModelAndView("error");
+		model.addObject("exception", ex);
+
+		return model;
+	}
 
 	public ShoppingCart getsCart() {
 		return sCart;

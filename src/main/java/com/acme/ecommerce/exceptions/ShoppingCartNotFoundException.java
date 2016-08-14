@@ -1,4 +1,4 @@
-package com.acme.ecommerce.service;//
+package com.acme.ecommerce.exceptions;//
 
 // eCommerce
 // com.acme.ecommerce.service created by zzheads on 13.08.2016.
