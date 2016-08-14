@@ -24,7 +24,7 @@
                     <li><a href="#">About</a></li>
                     <li><a href="#">FAQ</a></li>
                     <li><a name="cartButton" class="button icon-right" href="/cart">View Cart <i class="material-icons">shopping_cart</i></a></li>
-                    <li><a th:if="${(subTotal > 0) and (subTotal != null)}" th:text="${'SubTotal: $' + #numbers.formatDecimal(subTotal, 1, 'COMMA', 2, 'POINT')}"></a></li>
+                    <li><a th:if="${(subTotal > 0) and (subTotal != null)}" id="subTotal" name="subTotal" th:text="${'SubTotal: $' + #numbers.formatDecimal(subTotal, 1, 'COMMA', 2, 'POINT')}"></a></li>
                 </ul>
             </nav>
     </header>

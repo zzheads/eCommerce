@@ -3,11 +3,9 @@ package com.acme.ecommerce.controller;
 import com.acme.ecommerce.Application;
 import com.acme.ecommerce.config.PersistenceConfig;
 import com.acme.ecommerce.domain.FormatLocale;
+import com.gargoylesoftware.htmlunit.ElementNotFoundException;
 import com.gargoylesoftware.htmlunit.WebClient;
-import com.gargoylesoftware.htmlunit.html.HtmlAnchor;
-import com.gargoylesoftware.htmlunit.html.HtmlForm;
-import com.gargoylesoftware.htmlunit.html.HtmlPage;
-import com.gargoylesoftware.htmlunit.html.HtmlTextInput;
+import com.gargoylesoftware.htmlunit.html.*;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -91,4 +89,30 @@ public class TestProductControllerIT {
 
 		assertThat(productCartSubtotal).isEqualTo("$" + format(PRODUCT_PRICE.multiply(BigDecimal.valueOf(ORDER_QUANTITY))));
 	}
+
+	@Test
+	public void ProductsSubTotalTest() throws Exception {
+		HtmlPage indexPage = webClient.getPage("http://localhost:8080/");
+		HtmlAnchor formAnchor;
+		HtmlTextArea subTotal = null;
+		final int COUNT_CLICKS = 3;
+
+		try {
+			subTotal = indexPage.getHtmlElementById("subTotal");
+		} catch (ElementNotFoundException ex) {
+			assertThat(subTotal).isEqualTo(null);
+		}
+
+		HtmlForm form = indexPage.getFormByName("form "+PRODUCT_ID);
+
+		for (int i=0;i<COUNT_CLICKS;i++) {
+			formAnchor = indexPage.getAnchorByName("addButton "+PRODUCT_ID);
+			indexPage = formAnchor.click();
+		}
+
+		String subTotalString = indexPage.getHtmlElementById("subTotal").getTextContent();
+		assertThat(subTotalString).isEqualTo("SubTotal: $" + format(PRODUCT_PRICE.multiply(BigDecimal.valueOf(COUNT_CLICKS))));
+	}
+
+
 }

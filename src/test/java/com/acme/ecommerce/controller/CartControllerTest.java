@@ -5,6 +5,8 @@ import com.acme.ecommerce.domain.Product;
 import com.acme.ecommerce.domain.ProductPurchase;
 import com.acme.ecommerce.domain.Purchase;
 import com.acme.ecommerce.domain.ShoppingCart;
+import com.acme.ecommerce.exceptions.ExceedsProductQuantityException;
+import com.acme.ecommerce.exceptions.ProductNotFoundException;
 import com.acme.ecommerce.service.ProductService;
 import com.acme.ecommerce.service.PurchaseService;
 import org.junit.Before;
@@ -12,18 +14,26 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.springframework.boot.test.SpringApplicationConfiguration;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.RequestBuilder;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.servlet.DispatcherServlet;
+import org.springframework.web.servlet.FlashMap;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 import org.springframework.web.servlet.view.InternalResourceViewResolver;
 
+import javax.servlet.ServletContext;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,6 +45,7 @@ import static org.hamcrest.Matchers.hasProperty;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(classes = Application.class)
@@ -52,6 +63,8 @@ public class CartControllerTest {
 	private PurchaseService purchaseService;
 	@Mock
 	private ShoppingCart sCart;
+	@Mock
+	private RedirectAttributes redirectAttributes = Mockito.mock(RedirectAttributes.class);
 	@InjectMocks
 	private CartController cartController;
 
@@ -105,6 +118,32 @@ public class CartControllerTest {
 				.andExpect(status().is3xxRedirection())
 				.andExpect(redirectedUrl("/product/"));
 	}
+
+	@Test
+	public void addTooManyToCartTest1() throws Exception {
+		Product product = productBuilder();
+		product.setQuantity(15);
+
+		Purchase purchase = purchaseBuilder(product); // First purchase
+
+		when(productService.findById(1L)).thenReturn(product);
+		when(sCart.getPurchase()).thenReturn(purchase);
+
+		mockMvc.perform(MockMvcRequestBuilders.post("/cart/add")
+			.param("quantity", String.valueOf(product.getQuantity() + 1))
+			.param("productId", "1")
+			.flashAttr("redirectAttributes", redirectAttributes))
+			.andExpect(MockMvcResultMatchers.flash().attributeExists("flash"));
+
+
+//		mockMvc.perform(MockMvcRequestBuilders.post("/cart/add")
+//			.param("quantity", String.valueOf(product.getQuantity() + 1))
+//			.param("productId", "1"))
+//			.andExpect(MockMvcResultMatchers.model().attribute("flash", "rdValue"))
+//			.andExpect(MockMvcResultMatchers.flash().attribute("flash", FlashMessage.class));
+	}
+
+
 
 	@Test
 	public void addTooManyToCartTest() throws Exception {
