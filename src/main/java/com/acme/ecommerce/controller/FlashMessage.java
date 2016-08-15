@@ -41,4 +41,31 @@ public class FlashMessage {
         SUCCESS, FAILURE
     }
 
+    @Override public String toString() {
+        return "FlashMessage{" +
+            "message='" + message + '\'' +
+            ", status=" + status +
+            '}';
+    }
+
+    @Override public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (!(o instanceof FlashMessage))
+            return false;
+
+        FlashMessage that = (FlashMessage) o;
+
+        if (getMessage() != null ?
+            !getMessage().equals(that.getMessage()) :
+            that.getMessage() != null)
+            return false;
+        return getStatus() == that.getStatus();
+    }
+
+    @Override public int hashCode() {
+        int result = getMessage() != null ? getMessage().hashCode() : 0;
+        result = 31 * result + (getStatus() != null ? getStatus().hashCode() : 0);
+        return result;
+    }
 }

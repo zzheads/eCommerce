@@ -3,7 +3,9 @@ package com.acme.ecommerce.controller;
 import com.acme.ecommerce.domain.Product;
 import com.acme.ecommerce.domain.ProductPurchase;
 import com.acme.ecommerce.domain.ShoppingCart;
+import com.acme.ecommerce.exceptions.ExceedsProductQuantityException;
 import com.acme.ecommerce.exceptions.ProductNotFoundException;
+import com.acme.ecommerce.exceptions.ShoppingCartNotFoundException;
 import com.acme.ecommerce.service.ProductService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,10 +20,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.FlashMap;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.servlet.support.RequestContextUtils;
 
 import javax.activation.MimetypesFileTypeMap;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.io.*;
 
@@ -122,13 +127,26 @@ public class ProductController {
     return("about");
 	}
 
-	@ExceptionHandler(ProductNotFoundException.class)
-	public ModelAndView handleProductNotFoundException(ProductNotFoundException ex) {
+	@ExceptionHandler(ExceedsProductQuantityException.class)
+	public String handleExceedsProductQuantityException(Model model, HttpServletRequest req, Exception ex) {
 
-		ModelAndView model = new ModelAndView("error");
-		model.addObject("exception", ex);
+		FlashMap flashMap = RequestContextUtils.getOutputFlashMap(req);
+		if(flashMap != null) {
+			flashMap.put("flash",new FlashMessage(ex.getMessage(), FlashMessage.Status.FAILURE));
+		}
 
-		return model;
+		return "redirect:" + req.getHeader("referer");
+	}
+
+	@ExceptionHandler({ShoppingCartNotFoundException.class, ProductNotFoundException.class})
+	public String handleNotFoundException(Model model, HttpServletRequest req, Exception ex) {
+
+		FlashMap flashMap = RequestContextUtils.getOutputFlashMap(req);
+		if(flashMap != null) {
+			flashMap.put("exception", ex);
+		}
+
+		return "redirect:/error";
 	}
 
 }

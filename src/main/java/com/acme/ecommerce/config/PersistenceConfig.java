@@ -19,7 +19,7 @@ import java.util.Properties;
 @Configuration
 @EnableTransactionManagement
 @EnableJpaRepositories("com.acme.ecommerce.repository")
-@PropertySource("file:${properties.home}/eCommerce.properties")
+@PropertySource("file:E:/Projects/techdegree-javaweb-ecommerce-master/properties/eCommerce.properties")
 public class PersistenceConfig {
     @Autowired
     private Environment env;

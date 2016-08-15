@@ -1,9 +1,13 @@
 package com.acme.ecommerce.exceptions;//
 
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
+
 // eCommerce
 // com.acme.ecommerce.service created by zzheads on 13.08.2016.
 //
-public class ProductNotFoundException extends Exception {
+@ResponseStatus(value = HttpStatus.NOT_FOUND)
+public class ProductNotFoundException extends RuntimeException {
 
     private int code;
 

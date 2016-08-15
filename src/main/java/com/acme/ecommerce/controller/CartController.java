@@ -18,12 +18,17 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.servlet.FlashMap;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.servlet.support.RequestContextUtils;
 import org.springframework.web.servlet.view.RedirectView;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.math.BigDecimal;
+
+import static com.acme.ecommerce.controller.web.ReferrerInterceptor.*;
 
 
 @Controller
@@ -77,46 +82,35 @@ public class CartController {
 
 
     @RequestMapping(path="/add", method = RequestMethod.POST)
-    public RedirectView addToCart(@ModelAttribute(value="productId") long productId, @ModelAttribute(value="quantity") int quantity, RedirectAttributes redirectAttributes)	throws ProductNotFoundException {
+    public RedirectView addToCart(@ModelAttribute(value="productId") long productId, @ModelAttribute(value="quantity") int quantity, RedirectAttributes redirectAttributes) {
 
     	RedirectView redirect = new RedirectView("/product/");
 			redirect.setExposeModelAttributes(false);
 
-			try {
-				 redirectAttributes.addFlashAttribute("flash", shoppingCartService.addQuantity(sCart, productId, quantity));
-			} catch (ExceedsProductQuantityException e) {
-				e.printStackTrace();
-				redirectAttributes.addFlashAttribute("flash", new FlashMessage(e.getMessage(),	FlashMessage.Status.FAILURE));
-			}
+			FlashMessage flashMessage = shoppingCartService.addQuantity(sCart, productId, quantity);
+			redirectAttributes.addFlashAttribute("flash", flashMessage);
 
     	return redirect;
     }
 
 	@RequestMapping(path="/update", method = RequestMethod.POST)
-	public RedirectView updateCart(@ModelAttribute(value="productId") long productId, @ModelAttribute(value="newQuantity") int newQuantity, RedirectAttributes redirectAttributes) throws ProductNotFoundException {
+	public RedirectView updateCart(@ModelAttribute(value="productId") long productId, @ModelAttribute(value="newQuantity") int newQuantity, RedirectAttributes redirectAttributes) {
+
 		logger.debug("Updating Product: " + productId + " with Quantity: " + newQuantity);
 		RedirectView redirect = new RedirectView("/cart");
 		redirect.setExposeModelAttributes(false);
 
-		try {
-			redirectAttributes.addFlashAttribute("flash", shoppingCartService.updateQuantity(sCart, productId, newQuantity));
-		} catch (ShoppingCartNotFoundException e) {
-			e.printStackTrace();
-			redirectAttributes.addFlashAttribute("flash", new FlashMessage(e.getMessage(),	FlashMessage.Status.FAILURE));
-			redirect.setUrl("/error");
-		} catch (ExceedsProductQuantityException e) {
-			e.printStackTrace();
-			redirectAttributes.addFlashAttribute("flash", new FlashMessage(e.getMessage(),	FlashMessage.Status.FAILURE));
-		}
+		redirectAttributes.addFlashAttribute("flash", shoppingCartService.updateQuantity(sCart, productId, newQuantity));
 
 		return redirect;
     }
     
     @RequestMapping(path="/remove", method = RequestMethod.POST)
-    public RedirectView removeFromCart(@ModelAttribute(value="productId") long productId, RedirectAttributes redirectAttributes) throws ProductNotFoundException {
-    	logger.debug("Removing Product: " + productId);
-		RedirectView redirect = new RedirectView("/cart");
-		redirect.setExposeModelAttributes(false);
+    public RedirectView removeFromCart(@ModelAttribute(value="productId") long productId, RedirectAttributes redirectAttributes) {
+
+			logger.debug("Removing Product: " + productId);
+			RedirectView redirect = new RedirectView("/cart");
+			redirect.setExposeModelAttributes(false);
     	
     	Product updateProduct = productService.findById(productId);
     	if (updateProduct != null) {
@@ -139,11 +133,10 @@ public class CartController {
         			redirect.setUrl("/product/");
         		}
     		} else {
-    			logger.error("Unable to find shopping cart for update");
-    			redirect.setUrl("/error");
+					throw new ShoppingCartNotFoundException("Unable to find shopping cart for update");
     		}
     	} else {
-    		throw new ProductNotFoundException("Attempt to update on non-existent product");
+    		throw new ProductNotFoundException("Attempt to remove non-existent product");
     	}
 
     	return redirect;
@@ -161,21 +154,45 @@ public class CartController {
 			redirectAttributes.addFlashAttribute("flash", new FlashMessage ("Cart is empty.", FlashMessage.Status.SUCCESS));
 			sCart.setPurchase(purchaseService.save(purchase));
 		} else {
-			logger.error("Unable to find shopping cart for update");
-			redirect.setUrl("/error");
+			throw new ShoppingCartNotFoundException("Unable to find shopping cart for update");
 		}
 		
     	return redirect;
     }
 
-	@ExceptionHandler(ProductNotFoundException.class)
-	public ModelAndView handleProductNotFoundException(ProductNotFoundException ex) {
+//	@ExceptionHandler(ProductNotFoundException.class)
+//	public ModelAndView handleProductNotFoundException(ProductNotFoundException ex) {
+//
+//		ModelAndView model = new ModelAndView("error");
+//		model.addObject("exception", ex);
+//
+//		return model;
+//	}
 
-		ModelAndView model = new ModelAndView("error");
-		model.addObject("exception", ex);
 
-		return model;
+	@ExceptionHandler(ExceedsProductQuantityException.class)
+	public String handleExceedsProductQuantityException(Model model, HttpServletRequest req, Exception ex) {
+
+		FlashMap flashMap = RequestContextUtils.getOutputFlashMap(req);
+		if(flashMap != null) {
+			flashMap.put("flash",new FlashMessage(ex.getMessage(), FlashMessage.Status.FAILURE));
+		}
+
+		return "redirect:" + req.getHeader("referer");
 	}
+
+	@ExceptionHandler({ShoppingCartNotFoundException.class, ProductNotFoundException.class})
+	public String handleNotFoundException(Model model, HttpServletRequest req, Exception ex) {
+
+		FlashMap flashMap = RequestContextUtils.getOutputFlashMap(req);
+		if(flashMap != null) {
+			flashMap.put("exception", ex);
+		}
+
+		return "redirect:/error";
+	}
+
+
 
 	public ShoppingCart getsCart() {
 		return sCart;

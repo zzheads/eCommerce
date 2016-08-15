@@ -2,6 +2,7 @@ package com.acme.ecommerce.controller;
 
 import com.acme.ecommerce.Application;
 import com.acme.ecommerce.domain.Product;
+import com.acme.ecommerce.domain.ShoppingCart;
 import com.acme.ecommerce.service.ProductService;
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.html.HtmlAnchor;
@@ -53,6 +54,10 @@ public class ProductControllerTest {
 
 	@Mock
 	private ProductService productService;
+
+	@Mock
+	private ShoppingCart sCart;
+
 	@InjectMocks
 	private ProductController productController;
 
@@ -101,9 +106,10 @@ public class ProductControllerTest {
 	@Test
 	public void getProductDetailInvalidId() throws Exception {
 		when(productService.findById(1L)).thenReturn(null);
+
 		mockMvc.perform(MockMvcRequestBuilders.get("/product/detail/1"))
 			.andExpect(status().is3xxRedirection())
-		    .andExpect(redirectedUrl("/error"));
+			.andExpect(redirectedUrl("/error"));
 	}
 
 	@Test

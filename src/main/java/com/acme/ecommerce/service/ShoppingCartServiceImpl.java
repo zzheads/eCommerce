@@ -24,8 +24,7 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
     private PurchaseService purchaseService;
 
     @Override
-    public FlashMessage addQuantity(ShoppingCart cart, Long productId, int changeQuantity) throws
-        ProductNotFoundException, ExceedsProductQuantityException {
+    public FlashMessage addQuantity(ShoppingCart cart, Long productId, int changeQuantity) {
         // Changes quantity of product (productId) in shopping cart on changeQuantity, returns FlashMessage
         FlashMessage flashMessage;
         Product product = productService.findById(productId);
@@ -72,8 +71,7 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
     }
 
     @Override
-    public FlashMessage updateQuantity(ShoppingCart cart, Long productId, int newQuantity) throws ProductNotFoundException, ExceedsProductQuantityException,
-        ShoppingCartNotFoundException {
+    public FlashMessage updateQuantity(ShoppingCart cart, Long productId, int newQuantity) {
 
         FlashMessage flashMessage = new FlashMessage("", FlashMessage.Status.SUCCESS);
         Product updateProduct = productService.findById(productId);
